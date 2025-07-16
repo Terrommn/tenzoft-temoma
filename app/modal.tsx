@@ -9,7 +9,7 @@ export default function ModalScreen() {
   };
 
   return (
-    <Scaffold withBottomNav={false}>
+    <Scaffold>
       <View className="flex-1 items-center justify-center px-8">
         <Text className="text-4xl font-bold text-[#58E886] mb-8">
           📱 Modal

@@ -1,28 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Animated, {
-  BounceIn,
-  FadeIn,
-  FadeInUp,
-  Layout,
-  SlideInLeft,
-  SlideInRight,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withSpring,
-  ZoomIn
+    BounceIn,
+    FadeIn,
+    FadeInUp,
+    Layout,
+    SlideInLeft,
+    SlideInRight,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSequence,
+    withSpring,
+    ZoomIn
 } from 'react-native-reanimated';
 import { Scaffold } from '../../components/ui';
 
@@ -210,7 +210,7 @@ export default function ChatTab() {
   );
 
   return (
-    <Scaffold withBottomNav={true}>
+          <Scaffold avoidBottomNav={true}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -222,7 +222,7 @@ export default function ChatTab() {
             ref={scrollViewRef}
             className="flex-1 px-4"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 0, paddingTop: 20 }}
+            contentContainerStyle={{ paddingTop: 20 }}
           >
             {messages.map((message, index) => renderMessage(message, index))}
             {isTyping && <TypingIndicator />}
@@ -231,7 +231,7 @@ export default function ChatTab() {
           {/* Input Area */}
           <Animated.View
             entering={FadeInUp.springify()}
-            className="px-4"
+            className="px-4 pb-4"
           >
             <View
               className="bg-[#003030]/70 border border-[#58E886]/40 rounded-3xl p-3 shadow-xl"

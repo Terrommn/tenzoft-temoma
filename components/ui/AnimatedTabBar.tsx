@@ -2,11 +2,11 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
 import { Dimensions, Pressable, View } from 'react-native';
 import Animated, {
-  Extrapolate,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    Extrapolate,
+    interpolate,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');

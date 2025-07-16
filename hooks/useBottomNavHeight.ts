@@ -7,7 +7,8 @@ export const useBottomNavHeight = (enabled: boolean = false) => {
   
   const ratio = height / 812;
   const tabBarHeight = Math.max(50, Math.min(80, 60 * ratio));
+  const bottomSpacing = height * 0.015; // Same spacing used in AnimatedTabBar
   
-  // Return just the tab bar height for tight spacing
-  return tabBarHeight;
+  // Return tab bar height + bottom spacing + a bit of extra padding for comfortable spacing
+  return tabBarHeight + bottomSpacing;
 }; 
