@@ -1,11 +1,22 @@
-import { User } from 'firebase/auth';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AuthService } from '../services/auth';
-import { initializeDefaultCategories } from '../services/database';
-import { UserProfile } from '../types/models';
+
+// Mock user type
+interface MockUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+}
+
+// Mock user profile type
+interface UserProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: MockUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -33,33 +44,35 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<MockUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = AuthService.onAuthStateChanged(async (user) => {
-      setUser(user);
-      
-      if (user) {
-        // Load user profile
-        const profile = await AuthService.getUserProfileData();
-        setUserProfile(profile);
-      } else {
-        setUserProfile(null);
-      }
-      
+    // Simulate loading
+    setTimeout(() => {
       setLoading(false);
-    });
-
-    return unsubscribe;
+    }, 1000);
   }, []);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const result = await AuthService.signIn(email, password);
-      return result;
+      // Mock successful sign in
+      const mockUser: MockUser = {
+        uid: 'mock-user-id',
+        email: email,
+        displayName: 'Mock User'
+      };
+      setUser(mockUser);
+      setUserProfile({
+        id: mockUser.uid,
+        email: email,
+        displayName: 'Mock User'
+      });
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
@@ -68,14 +81,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (email: string, password: string, displayName?: string) => {
     setLoading(true);
     try {
-      const result = await AuthService.signUp(email, password, displayName);
-      
-      // If signup successful, initialize default categories
-      if (result.success && result.user) {
-        await initializeDefaultCategories(result.user.uid);
-      }
-      
-      return result;
+      // Mock successful sign up
+      const mockUser: MockUser = {
+        uid: 'mock-user-id',
+        email: email,
+        displayName: displayName || 'Mock User'
+      };
+      setUser(mockUser);
+      setUserProfile({
+        id: mockUser.uid,
+        email: email,
+        displayName: displayName || 'Mock User'
+      });
+      return { success: true, user: mockUser };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
@@ -84,28 +104,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const result = await AuthService.signInWithGoogle();
-      
-      // If signup successful, initialize default categories
-      if (result.success && result.user) {
-        await initializeDefaultCategories(result.user.uid);
-      }
-      
-      return result;
+      // Mock successful Google sign in
+      const mockUser: MockUser = {
+        uid: 'mock-google-user-id',
+        email: 'mock@gmail.com',
+        displayName: 'Mock Google User'
+      };
+      setUser(mockUser);
+      setUserProfile({
+        id: mockUser.uid,
+        email: 'mock@gmail.com',
+        displayName: 'Mock Google User'
+      });
+      return { success: true, user: mockUser };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
   };
 
   const signUpWithGoogle = async () => {
-    return signInWithGoogle(); // Same as sign in for Google
+    return signInWithGoogle();
   };
 
   const signOut = async () => {
     setLoading(true);
     try {
-      const result = await AuthService.signOut();
-      return result;
+      setUser(null);
+      setUserProfile(null);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
@@ -113,26 +143,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (updates: { displayName?: string; photoURL?: string }) => {
     try {
-      const result = await AuthService.updateUserProfile(updates);
-      
-      if (result.success) {
-        // Refresh user profile
-        const profile = await AuthService.getUserProfileData();
-        setUserProfile(profile);
+      if (userProfile) {
+        setUserProfile({
+          ...userProfile,
+          ...updates
+        });
       }
-      
-      return result;
+      return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
   };
 
   const sendPasswordResetEmail = async (email: string) => {
-    return await AuthService.sendPasswordResetEmail(email);
+    try {
+      // Mock successful password reset
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   };
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
-    return await AuthService.changePassword(currentPassword, newPassword);
+    try {
+      // Mock successful password change
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   };
 
   const value: AuthContextType = {
@@ -149,5 +187,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     changePassword,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }; 

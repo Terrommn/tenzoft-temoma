@@ -2,6 +2,7 @@ import { TamaguiProvider, Theme } from '@tamagui/core';
 import { PortalProvider } from '@tamagui/portal';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import '../global.css';
 import { tamaguiConfig } from '../tamagui.config';
@@ -51,14 +52,16 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <TamaguiProvider config={tamaguiConfig}>
-      <Theme name="dark">
-        <PortalProvider>
-          <AuthProvider>
-            <RootLayoutNav />
-          </AuthProvider>
-        </PortalProvider>
-      </Theme>
-    </TamaguiProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TamaguiProvider config={tamaguiConfig}>
+        <Theme name="dark">
+          <PortalProvider>
+            <AuthProvider>
+              <RootLayoutNav />
+            </AuthProvider>
+          </PortalProvider>
+        </Theme>
+      </TamaguiProvider>
+    </GestureHandlerRootView>
   );
 }

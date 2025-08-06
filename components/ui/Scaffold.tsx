@@ -24,44 +24,59 @@ export const Scaffold: React.FC<ScaffoldProps> = ({
   const bottomPadding = useBottomNavHeight(avoidBottomNav);
 
   return (
-    <ImageBackground
-      source={require('../../assets/bg.png')}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-      onLoad={() => console.log('Background image loaded successfully')}
-      onError={(error) => console.log('Background image failed to load:', error)}
-    >
-      <View className="flex-1" style={{ paddingTop: topPadding }}>
-        {/* Top Bar */}
-        {(title || showBack || right) && (
-          <View className="flex-row items-center justify-between px-4 py-3" style={{ minHeight: 56 }}>
-            {/* Left: Back Arrow */}
-            <View style={{ width: 40 }}>
-              {showBack && (
-                <TouchableOpacity onPress={onBack} hitSlop={10}>
-                  <Ionicons name="arrow-back" size={24} color="#58E886" />
-                </TouchableOpacity>
-              )}
+    <>
+      {/* Custom Status Bar Background - bg-[#58E886]/10 equivalent */}
+      <View 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0,
+          backgroundColor: 'rgba(88, 232, 134, 0.1)', // This is bg-[#58E886]/10
+          zIndex: 1000,
+        }}
+      />
+      
+      <ImageBackground
+        source={require('../../assets/bg.png')}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+        onLoad={() => console.log('Background image loaded successfully')}
+        onError={(error) => console.log('Background image failed to load:', error)}
+      >
+        <View className="flex-1" style={{ paddingTop: topPadding }}>
+          {/* Top Bar */}
+          {(title || showBack || right) && (
+            <View className="flex-row items-center justify-between px-4 py-3" style={{ minHeight: 56 }}>
+              {/* Left: Back Arrow */}
+              <View style={{ width: 40 }}>
+                {showBack && (
+                  <TouchableOpacity onPress={onBack} hitSlop={10}>
+                    <Ionicons name="arrow-back" size={24} color="#58E886" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              {/* Center: Title */}
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                {title && (
+                  <Text className="text-lg font-bold text-[#58E886]" numberOfLines={1}>
+                    {title}
+                  </Text>
+                )}
+              </View>
+              {/* Right: Custom */}
+              <View style={{ width: 40, alignItems: 'flex-end' }}>
+                {right}
+              </View>
             </View>
-            {/* Center: Title */}
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              {title && (
-                <Text className="text-lg font-bold text-[#58E886]" numberOfLines={1}>
-                  {title}
-                </Text>
-              )}
-            </View>
-            {/* Right: Custom */}
-            <View style={{ width: 40, alignItems: 'flex-end' }}>
-              {right}
-            </View>
+          )}
+          {/* Main Content */}
+          <View className="flex-1" style={{ paddingBottom: bottomPadding }}>
+            {children}
           </View>
-        )}
-        {/* Main Content */}
-        <View className="flex-1" style={{ paddingBottom: bottomPadding }}>
-          {children}
         </View>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
+    </>
   );
 }; 

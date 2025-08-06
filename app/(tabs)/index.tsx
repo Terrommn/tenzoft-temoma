@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { PieChart, Scaffold } from '../../components/ui';
+import { Drawer, PieChart, Scaffold } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Expense {
@@ -27,13 +27,14 @@ interface Category {
 const STORAGE_KEY = '@temoma_expenses';
 const CATEGORIES_STORAGE_KEY = '@temoma_categories';
 
-export default function HomeTab() {
+export default function Index() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [drawerVisible, setDrawerVisible] = useState(false);
+
   const { signOut, user } = useAuth();
-  
+
   // Budget state variables
   const [dailyBudget] = useState(50);
   const [weeklyBudget] = useState(300);
@@ -43,6 +44,21 @@ export default function HomeTab() {
   const now = new Date();
   const selectedMonth = now.getMonth();
   const selectedYear = now.getFullYear();
+
+  // Function to get time-based greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) {
+      return 'Good morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good afternoon';
+    } else if (hour >= 17 && hour < 22) {
+      return 'Good evening';
+    } else {
+      return 'Good night';
+    }
+  };
 
   // Filtered expenses for current month/year
   const filteredExpenses = expenses.filter(exp =>
@@ -55,8 +71,8 @@ export default function HomeTab() {
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
+        {
+          text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             const result = await signOut();
@@ -127,8 +143,8 @@ export default function HomeTab() {
 
   const getDailySpending = () => {
     const today = new Date();
-    const todayExpenses = filteredExpenses.filter(expense => 
-      expense.type === 'expense' && 
+    const todayExpenses = filteredExpenses.filter(expense =>
+      expense.type === 'expense' &&
       expense.date.toDateString() === today.toDateString()
     );
     return todayExpenses.reduce((total, expense) => total + expense.amount, 0);
@@ -137,8 +153,8 @@ export default function HomeTab() {
   const getWeeklySpending = () => {
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const weekExpenses = filteredExpenses.filter(expense => 
-      expense.type === 'expense' && 
+    const weekExpenses = filteredExpenses.filter(expense =>
+      expense.type === 'expense' &&
       expense.date >= startOfWeek
     );
     return weekExpenses.reduce((total, expense) => total + expense.amount, 0);
@@ -189,17 +205,19 @@ export default function HomeTab() {
   const renderBudgetBar = (title: string, spent: number, budget: number, color: string) => {
     const percentage = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
     const isOverBudget = spent > budget;
-    
+
     return (
-      <View className="mb-6">
-        <View className="flex-row justify-between items-center mb-2">
+
+      <View className="mb-1">
+        <View className="flex-row justify-between items-center">
           <Text className="text-[#58E886] text-base font-bold">{title}</Text>
           <Text className="text-[#58E886]/70 text-sm">
             ${spent.toFixed(2)} / ${budget.toFixed(2)}
           </Text>
         </View>
         <View className="bg-[#002a20]/30 rounded-full h-4 border border-[#58E886]/20">
-          <View 
+          <View
+
             className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : color}`}
             style={{ width: `${percentage}%` }}
           />
@@ -212,34 +230,88 @@ export default function HomeTab() {
   };
 
   return (
-    <Scaffold>
-      <View className="flex-1" style={{ backgroundColor: 'rgba(0, 23, 17, 0.3)' }}>
-        <ScrollView
-          className="flex-1 px-4"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}
-        >
-          {/* Sign Out Button */}
-          <View className="flex-row justify-between items-center mb-6">
-            <View>
-              <Text className="text-[#58E886] text-lg font-bold">Welcome back!</Text>
-              <Text className="text-[#D8DEE9] text-sm">{user?.email || 'User'}</Text>
-            </View>
-            <TouchableOpacity
-              className="bg-[#58E886]/20 px-4 py-2 rounded-full border border-[#58E886]/30"
-              onPress={handleSignOut}
-            >
-              <Text className="text-[#58E886] font-medium">Sign Out</Text>
-            </TouchableOpacity>
+    <>
+      {/* Settings Drawer */}
+      <Drawer
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+      >
+        {/* Drawer Header */}
+        <View className="bg-[#58E886]/10 border-b border-[#58E886]/20 p-6">
+         
+          
+          {/* User Info */}
+            <View className="flex-row items-center">
+              <View className="w-12 h-12 bg-[#58E886] rounded-full items-center justify-center mr-3">
+                <Ionicons name="person" size={24} color="#001711" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[#58E886] font-semibold text-xl">
+                  {user?.displayName || 'User'}
+                </Text>
+                <Text className="text-[#D8DEE9]/70 text-sm">
+                  {user?.email || 'No email set'}
+                </Text>
+              </View>
           </View>
+        </View>
 
-          <Animated.View
-            entering={FadeInDown.delay(100).springify()}
-            className="space-y-6"
+        {/* Drawer Content */}
+        <View className="p-6 space-y-2">
+          {/* Profile */}
+          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
+            <Ionicons name="person-circle" size={24} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2 ">Profile</Text>
+          </TouchableOpacity>
+
+          {/* Categories */}
+          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
+            <Ionicons name="list" size={24} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2 ">Categories</Text>
+          </TouchableOpacity>
+
+          {/* Settings */}
+          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
+            <Ionicons name="cash" size={24} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2 ">Budgets</Text>
+          </TouchableOpacity>
+          
+          {/* Settings */}
+          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
+            <Ionicons name="settings" size={24} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2 ">Settings</Text>
+          </TouchableOpacity>
+
+      
+        </View>
+      </Drawer>
+
+      <Scaffold>
+        <View className="flex-row bg-[#58E886]/10 items-center justify-between px-4 py-4">
+          <Text className="text-[#58E886] text-lg font-bold">
+            {getTimeBasedGreeting()}, {user?.displayName}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setDrawerVisible(true)}
+            className="p-2"
+            activeOpacity={0.8}
           >
-            {/* Card 1: Category Pie Chart */}
+            <Ionicons name="menu" size={24} color="#58E886" />
+          </TouchableOpacity>
+        </View>
+        <View className="flex-1" style={{ backgroundColor: 'rgba(0, 23, 17, 0.3)' }}>
+          <ScrollView
+            className="flex-1 px-4"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}
+          >
+            <Animated.View
+              entering={FadeInDown.delay(100).springify()}
+              className="space-y-6"
+            >
+              {/* Card 1: Category Pie Chart */}
             {filteredExpenses.length > 0 && (
-              <View 
+              <View
                 className="bg-[#58E886]/10 border-2 border-[#58E886]/30 rounded-3xl p-6"
                 style={{
                   shadowColor: '#58E886',
@@ -247,7 +319,6 @@ export default function HomeTab() {
                   shadowOpacity: 0.2,
                   shadowRadius: 12,
                   elevation: 8,
-                  minHeight: 380,
                 }}
               >
                 <Text className="text-[#58E886] text-lg font-bold mb-4 text-center">Category Breakdown</Text>
@@ -279,7 +350,7 @@ export default function HomeTab() {
                     </View>
                   </View>
                 </View>
-                
+
                 {/* Total Income and Expenses */}
                 <View className="mt-6 pt-4 border-t border-[#58E886]/20">
                   <View className='flex-row items-center justify-around'>
@@ -301,7 +372,7 @@ export default function HomeTab() {
             )}
 
             {/* Card 2: Budget Comparison */}
-            <View 
+            <View
               className="bg-[#58E886]/10 border-2 border-[#58E886]/30 rounded-3xl p-6"
               style={{
                 shadowColor: '#58E886',
@@ -309,29 +380,28 @@ export default function HomeTab() {
                 shadowOpacity: 0.2,
                 shadowRadius: 12,
                 elevation: 8,
-                minHeight: 380,
               }}
             >
-              <Text className="text-[#58E886] text-lg font-bold mb-6 text-center">Budget Tracking</Text>
-              
+              <Text className="text-[#58E886] text-lg font-bold mb-3 text-center">Budget Tracking</Text>
+
               {renderBudgetBar(
-                "Daily Budget", 
-                getDailySpending(), 
-                dailyBudget, 
+                "Daily Budget",
+                getDailySpending(),
+                dailyBudget,
                 "bg-blue-500"
               )}
-              
+
               {renderBudgetBar(
-                "Weekly Budget", 
-                getWeeklySpending(), 
-                weeklyBudget, 
+                "Weekly Budget",
+                getWeeklySpending(),
+                weeklyBudget,
                 "bg-purple-500"
               )}
-              
+
               {renderBudgetBar(
-                "Monthly Budget", 
-                getMonthlySpending(), 
-                monthlyBudget, 
+                "Monthly Budget",
+                getMonthlySpending(),
+                monthlyBudget,
                 "bg-orange-500"
               )}
             </View>
@@ -356,9 +426,10 @@ export default function HomeTab() {
                 </Text>
               </View>
             )}
-          </Animated.View>
-        </ScrollView>
-      </View>
-    </Scaffold>
+            </Animated.View>
+          </ScrollView>
+        </View>
+      </Scaffold>
+    </>
   );
-} 
+}

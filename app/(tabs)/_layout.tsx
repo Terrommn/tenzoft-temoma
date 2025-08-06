@@ -3,35 +3,53 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { AnimatedTabBar } from '../../components/ui';
 
-export default function TabLayout() {
-
+export default function TabsLayout() {
   return (
     <Tabs
-      tabBar={(props) => <AnimatedTabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
+      tabBar={props => <AnimatedTabBar {...props} />}
     >
-      {[
-        { name: 'index', icon: 'wallet' },
-        { name: 'chat', icon: 'chatbubble' },
-        { name: 'expenses', icon: 'analytics' },
-      ].map(({ name, icon }) => (
-        <Tabs.Screen
-          key={name}
-          name={name}
-          options={{
-            title: '',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons 
-                size={28} 
-                name={focused ? icon as any : `${icon}-outline` as any} 
-                color={color} 
-              />
-            ),
-          }}
-        />
-      ))}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name={focused ? 'pie-chart' : 'pie-chart-outline'} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="expenses"
+        options={{
+          title: 'Expenses',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name={focused ? 'wallet' : 'wallet-outline'} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name={focused ? 'chatbubble' : 'chatbubble-outline'} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 } 

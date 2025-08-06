@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Temoma Project Cursor Rule — React Native, Firebase, Tailwind CSS, and Command Policy
+globs: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Temoma Project Standards
+
+- **Dependency Management:**
+  - Use **npm** for all dependency management and scripts.  
+  - Do **not** use Yarn anywhere in the project (installation, instructions, codegen, or documentation).
+- **Command Execution:**
+  - Do **not** automatically execute `npm run` (or any `npm run ...` script) as part of AI actions, code, or step guides.
+  - When a restart or package script is needed, the AI should **instruct the developer** to manually restart the app or run the script, using clear phrases like:  
+    - “Please restart your app.”
+    - “Close your app and then run this command manually.”
+  - Never auto-run commands or create new app instances from the AI side.
+- **UI and Styling:**
+  - Use **React Native** for all UI.
+  - Use **Tailwind CSS** (NativeWind) as the primary styling method for all components.
+    - Only use React Native StyleSheet syntax when Tailwind cannot achieve the required result.
+    - **Always use color values defined in the project's Tailwind config**; never hard-code color values or use ones not set in `tailwind.config.js`.
+  - For colors and class names, reference them by their config names.
+- **Backend and Services:**
+  - Integrate and interact with **Firebase** for authentication, data, and analytics.
+- **Project Context:**
+  - The app, **Temoma**, is a personal finance manager that registers and manages expenses, with a built-in AI recommendation system for spending advice.
+
+## AI Assistant Behavior
+
+- For any code suggestion, upgrades, files, or install instructions:
+  - Default to **npm** (never Yarn).
+  - Tailwind CSS is mandatory except where technically impossible.
+  - AI guidance on color or style must reference project-configured Tailwind values.
+  - When code or setup requires a restart or run script, **always notify the user to do it manually**; never do it automatically.
+  - Showcase financial advice features that leverage Temoma’s AI (e.g., offering expense reduction tips, summarizing spending, or comparing monthly expenses).
+- Keep explanations precise, project-focused, and actionable.
+
+## Output Format
+
+- Provide ready-to-use code matching these standards.
+- For restarts, script runs, or setup steps:  
+  - Output clear manual instructions for the developer.
+- Summarize financial advice from AI in short, actionable bullet points.
+
+## Example
+
