@@ -62,10 +62,6 @@ export default function ExpensesTab() {
   const bottomNavHeight = useBottomNavHeight(true);
 
   // Budget state variables
-  const [dailyBudget, setDailyBudget] = useState(50);
-  const [weeklyBudget, setWeeklyBudget] = useState(300);
-  const [monthlyBudget, setMonthlyBudget] = useState(1200);
-  const [activeCardIndex, setActiveCardIndex] = useState(0);
 
   // Helper to get month name
   const getMonthName = (month: number) => {
@@ -81,7 +77,7 @@ export default function ExpensesTab() {
   useEffect(() => {
     loadExpenses();
     loadCategories();
-  }, []);
+  }, [loadExpenses, loadCategories]);
 
   // Update selected category when transaction type changes
   useEffect(() => {
@@ -98,10 +94,10 @@ export default function ExpensesTab() {
   useFocusEffect(
     React.useCallback(() => {
       loadCategories();
-    }, [])
+    }, [loadCategories])
   );
 
-  const loadExpenses = async () => {
+  const loadExpenses = React.useCallback(async () => {
     try {
       setIsLoading(true);
       const storedExpenses = await AsyncStorage.getItem(STORAGE_KEY);
@@ -155,21 +151,21 @@ export default function ExpensesTab() {
     } catch (error) {
       console.error('Error loading expenses:', error);
       Alert.alert('Error', 'Failed to load expenses from storage');
-    } finally {
+         } finally {
       setIsLoading(false);
     }
-  };
+  }, [saveExpenses]);
 
-  const saveExpenses = async (expensesToSave: Expense[]) => {
+  const saveExpenses = React.useCallback(async (expensesToSave: Expense[]) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(expensesToSave));
     } catch (error) {
       console.error('Error saving expenses:', error);
       Alert.alert('Error', 'Failed to save expenses to storage');
     }
-  };
+  }, []);
 
-  const loadCategories = async () => {
+  const loadCategories = React.useCallback(async () => {
     try {
       const storedCategories = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
       if (storedCategories) {
@@ -188,12 +184,7 @@ export default function ExpensesTab() {
         setCategories(parsedCategories);
         console.log('Categories loaded:', parsedCategories.length, 'categories');
         // Set initial selected category or update if current selection is invalid
-        const currentTypeCategories = parsedCategories.filter((cat: Category) => cat.type === 'expense');
-        if (currentTypeCategories.length > 0) {
-          if (!categories.find(cat => cat.name === 'Food')) {
-            // This is now handled in the TransactionForm component
-          }
-        }
+        // Ensure we have at least one expense category; UI handles selection
       } else {
         // Set default categories if no data exists
         const defaultCategories = [
@@ -220,11 +211,11 @@ export default function ExpensesTab() {
 
         // Set initial selected category from default categories
         // This is now handled in the TransactionForm component
-      }
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
-  };
+             }
+     } catch (error) {
+       console.error('Error loading categories:', error);
+     }
+   }, []);
 
   const addTransaction = async (newTransaction: Expense) => {
     const updatedExpenses = [newTransaction, ...expenses];
@@ -257,24 +248,7 @@ export default function ExpensesTab() {
     );
   };
 
-  const clearAllExpenses = async () => {
-    Alert.alert(
-      'Clear All Expenses',
-      'Are you sure you want to delete all expenses? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: async () => {
-            setExpenses([]);
-            await AsyncStorage.removeItem(STORAGE_KEY);
-            Alert.alert('Success', 'All expenses cleared!');
-          },
-        },
-      ]
-    );
-  };
+
 
   // Update getTotalExpenses and getTotalIncome to use filteredExpenses
   const getTotalExpenses = () => {
@@ -289,28 +263,7 @@ export default function ExpensesTab() {
       .reduce((total, expense) => total + expense.amount, 0);
   };
 
-  const getDailySpending = () => {
-    const today = new Date();
-    const todayExpenses = filteredExpenses.filter(expense =>
-      expense.type === 'expense' &&
-      expense.date.toDateString() === today.toDateString()
-    );
-    return todayExpenses.reduce((total, expense) => total + expense.amount, 0);
-  };
 
-  const getWeeklySpending = () => {
-    const now = new Date();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const weekExpenses = filteredExpenses.filter(expense =>
-      expense.type === 'expense' &&
-      expense.date >= startOfWeek
-    );
-    return weekExpenses.reduce((total, expense) => total + expense.amount, 0);
-  };
-
-  const getMonthlySpending = () => {
-    return getTotalExpenses();
-  };
 
   const getCategoryIcon = (categoryName: string) => {
     return categories.find(cat => cat.name === categoryName)?.icon || 'help-circle';
@@ -577,10 +530,7 @@ export default function ExpensesTab() {
           <ScrollView
             className="flex-1"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingTop: activeCardIndex === 0 ? 10 : 20,
-              paddingBottom: 100
-            }}
+            contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}
             style={{ backgroundColor: 'transparent' }}
           >
             {/* Expenses List */}

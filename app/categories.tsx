@@ -3,16 +3,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, {
-    FadeInDown,
-    SlideInRight
+  FadeInDown,
+  SlideInRight
 } from 'react-native-reanimated';
 import { Scaffold } from '../components/ui';
 
@@ -48,11 +48,7 @@ export default function CategoriesScreen() {
   const [selectedType, setSelectedType] = useState<'expense' | 'income'>('expense');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
+  const loadCategories = React.useCallback(async () => {
     try {
       setIsLoading(true);
       const storedCategories = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
@@ -83,7 +79,11 @@ export default function CategoriesScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   const saveCategories = async (categoriesToSave: Category[]) => {
     try {

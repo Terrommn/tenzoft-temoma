@@ -24,7 +24,7 @@ function RootLayoutNav() {
       // User is authenticated but on login page, redirect to tabs
       router.replace('/(tabs)');
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   return (
     <Stack

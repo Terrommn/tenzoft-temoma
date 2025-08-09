@@ -2,11 +2,11 @@ import React from 'react';
 import { Dimensions, Platform, StatusBar, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -25,13 +25,13 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, children }) =>
 
   React.useEffect(() => {
     if (visible) {
-      translateX.value = withSpring(0, { damping: 20, stiffness: 0 });
+      translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
       overlayOpacity.value = withTiming(0.5, { duration: 300 });
     } else {
       translateX.value = withSpring(-DRAWER_WIDTH, { damping: 20, stiffness: 300 });
       overlayOpacity.value = withTiming(0, { duration: 300 });
     }
-  }, [visible]);
+  }, [visible, overlayOpacity, translateX]);
 
   const animatedDrawerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

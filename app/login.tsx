@@ -35,7 +35,7 @@ export default function LoginScreen() {
       } else {
         Alert.alert('Error', result.error || 'Authentication failed');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -51,7 +51,7 @@ export default function LoginScreen() {
       } else {
         Alert.alert('Error', result.error || 'Google authentication failed');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -74,7 +74,7 @@ export default function LoginScreen() {
       } else {
         Alert.alert('Error', result.error || 'Failed to send reset email');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);

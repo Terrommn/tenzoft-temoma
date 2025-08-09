@@ -1,5 +1,5 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Dimensions, Pressable, View } from 'react-native';
 import Animated, {
     Extrapolate,
@@ -11,7 +11,66 @@ import Animated, {
 
 const { width } = Dimensions.get('window');
 
-interface AnimatedTabBarProps extends BottomTabBarProps {}
+// Replace empty interface extending with a type alias to satisfy lint rule
+export type AnimatedTabBarProps = BottomTabBarProps;
+
+type TabItemProps = {
+  index: number;
+  tabWidth: number;
+  isFocused: boolean;
+  translateX: Animated.SharedValue<number>;
+  options: BottomTabBarProps['descriptors'][string]['options'];
+  onPress: () => void;
+  onLongPress: () => void;
+};
+
+const TabItem: React.FC<TabItemProps> = ({
+  index,
+  tabWidth,
+  isFocused,
+  translateX,
+  options,
+  onPress,
+  onLongPress,
+}) => {
+  const tabAnimatedStyle = useAnimatedStyle(() => {
+    const scaleValue = interpolate(
+      translateX.value,
+      [(index - 1) * tabWidth, index * tabWidth, (index + 1) * tabWidth],
+      [0.8, 1.1, 0.8],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [{ scale: scaleValue }],
+    };
+  });
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      className="flex-1 items-center justify-center py-1.5 px-4"
+      style={{ width: tabWidth }}
+      accessibilityRole="button"
+      accessibilityState={isFocused ? { selected: true } : {}}
+      accessibilityLabel={options.tabBarAccessibilityLabel}
+    >
+      <Animated.View 
+        className="items-center justify-center"
+        style={tabAnimatedStyle}
+      >
+        {options.tabBarIcon && 
+          options.tabBarIcon({
+            focused: isFocused,
+            color: isFocused ? '#58E886' : '#626f6a',
+            size: 28,
+          })
+        }
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   state,
@@ -24,9 +83,9 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   const tabBarHeight = Math.max(50, Math.min(80, 60 * ratio));
   const bottomSpacing = height * 0.015; // Reduced from 0.025 to 0.015
   const padding = Math.max(5, Math.min(15, 8 * ratio));
-  
-  // Adjusted calculation since no margin (left-5 right-5 = 40px total)
-  const TAB_WIDTH = (width - 40) / state.routes.length;
+
+  // Memoize tab width to avoid recalculations
+  const TAB_WIDTH = useMemo(() => (width - 40) / state.routes.length, [state.routes.length]);
   
   const translateX = useSharedValue(0);
 
@@ -36,7 +95,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
       stiffness: 120,
       mass: 1,
     });
-  }, [state.index, TAB_WIDTH]);
+  }, [state.index, TAB_WIDTH, translateX]);
 
   const indicatorStyle = useAnimatedStyle(() => {
     return {
@@ -95,44 +154,17 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
           });
         };
 
-        // Create animated style for each tab
-        const tabAnimatedStyle = useAnimatedStyle(() => {
-          const scaleValue = interpolate(
-            translateX.value,
-            [(index - 1) * TAB_WIDTH, index * TAB_WIDTH, (index + 1) * TAB_WIDTH],
-            [0.8, 1.1, 0.8],
-            Extrapolate.CLAMP
-          );
-
-          return {
-            transform: [{ scale: scaleValue }],
-          };
-        });
-
         return (
-          <Pressable
+          <TabItem
             key={route.key}
+            index={index}
+            tabWidth={TAB_WIDTH}
+            isFocused={isFocused}
+            translateX={translateX}
+            options={options}
             onPress={onPress}
             onLongPress={onLongPress}
-            className="flex-1 items-center justify-center py-1.5 px-4"
-            style={{ width: TAB_WIDTH }}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={options.tabBarAccessibilityLabel}
-          >
-            <Animated.View 
-              className="items-center justify-center"
-              style={tabAnimatedStyle}
-            >
-              {options.tabBarIcon && 
-                options.tabBarIcon({
-                  focused: isFocused,
-                  color: isFocused ? '#58E886' : '#626f6a',
-                  size: 28,
-                })
-              }
-            </Animated.View>
-          </Pressable>
+          />
         );
       })}
     </View>

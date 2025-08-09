@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Drawer, PieChart, Scaffold } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,7 +33,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [drawerVisible, setDrawerVisible] = useState(false);
 
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
 
   // Budget state variables
   const [dailyBudget] = useState(50);
@@ -65,25 +65,6 @@ export default function Index() {
     exp.date.getMonth() === selectedMonth && exp.date.getFullYear() === selectedYear
   );
 
-  const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await signOut();
-            if (!result.success) {
-              Alert.alert('Error', result.error || 'Failed to sign out');
-            }
-          }
-        }
-      ]
-    );
-  };
 
   useEffect(() => {
     loadExpenses();
