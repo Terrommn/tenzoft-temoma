@@ -73,30 +73,17 @@ export default function ExpensesTab() {
     exp.date.getMonth() === selectedMonth && exp.date.getFullYear() === selectedYear
   );
 
-  // Load expenses from AsyncStorage on component mount
-  useEffect(() => {
-    loadExpenses();
-    loadCategories();
-  }, [loadExpenses, loadCategories]);
-
-  // Update selected category when transaction type changes
-  useEffect(() => {
-    const currentTypeCategories = categories.filter(cat => cat.type === 'expense');
-    if (currentTypeCategories.length > 0) {
-      // Set initial selected category if none exists
-      if (!categories.find(cat => cat.name === 'Food')) {
-        // This is now handled in the TransactionForm component
-      }
+  // Save expenses to AsyncStorage
+  const saveExpenses = React.useCallback(async (expensesToSave: Expense[]) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(expensesToSave));
+    } catch (error) {
+      console.error('Error saving expenses:', error);
+      Alert.alert('Error', 'Failed to save expenses to storage');
     }
-  }, [categories]);
+  }, []);
 
-  // Reload categories when screen comes into focus (e.g., returning from categories screen)
-  useFocusEffect(
-    React.useCallback(() => {
-      loadCategories();
-    }, [loadCategories])
-  );
-
+  // Load expenses from AsyncStorage
   const loadExpenses = React.useCallback(async () => {
     try {
       setIsLoading(true);
@@ -110,60 +97,16 @@ export default function ExpensesTab() {
         }));
         setExpenses(expensesWithDates);
       } else {
-        // Set default expenses if no data exists
-        const defaultExpenses = [
-          {
-            id: '1',
-            title: 'Grocery Shopping',
-            amount: 85.50,
-            category: 'Food',
-            date: new Date(),
-            type: 'expense' as const,
-          },
-          {
-            id: '2',
-            title: 'Uber Ride',
-            amount: 12.30,
-            category: 'Transport',
-            date: new Date(),
-            type: 'expense' as const,
-          },
-          {
-            id: '3',
-            title: 'Salary',
-            amount: 3500.00,
-            category: 'Salary',
-            date: new Date(),
-            type: 'income' as const,
-          },
-          {
-            id: '4',
-            title: 'Freelance Work',
-            amount: 450.00,
-            category: 'Freelance',
-            date: new Date(),
-            type: 'income' as const,
-          },
-        ];
-        setExpenses(defaultExpenses);
-        await saveExpenses(defaultExpenses);
+        // No default expenses - start with empty list
+        setExpenses([]);
       }
     } catch (error) {
       console.error('Error loading expenses:', error);
       Alert.alert('Error', 'Failed to load expenses from storage');
-         } finally {
+    } finally {
       setIsLoading(false);
     }
   }, [saveExpenses]);
-
-  const saveExpenses = React.useCallback(async (expensesToSave: Expense[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(expensesToSave));
-    } catch (error) {
-      console.error('Error saving expenses:', error);
-      Alert.alert('Error', 'Failed to save expenses to storage');
-    }
-  }, []);
 
   const loadCategories = React.useCallback(async () => {
     try {
@@ -211,11 +154,35 @@ export default function ExpensesTab() {
 
         // Set initial selected category from default categories
         // This is now handled in the TransactionForm component
-             }
-     } catch (error) {
-       console.error('Error loading categories:', error);
-     }
-   }, []);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }, []);
+
+  // Load expenses and categories on component mount
+  useEffect(() => {
+    loadExpenses();
+    loadCategories();
+  }, [loadExpenses, loadCategories]);
+
+  // Update selected category when transaction type changes
+  useEffect(() => {
+    const currentTypeCategories = categories.filter(cat => cat.type === 'expense');
+    if (currentTypeCategories.length > 0) {
+      // Set initial selected category if none exists
+      if (!categories.find(cat => cat.name === 'Food')) {
+        // This is now handled in the TransactionForm component
+      }
+    }
+  }, [categories]);
+
+  // Reload categories when screen comes into focus (e.g., returning from categories screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCategories();
+    }, [loadCategories])
+  );
 
   const addTransaction = async (newTransaction: Expense) => {
     const updatedExpenses = [newTransaction, ...expenses];
@@ -449,16 +416,19 @@ export default function ExpensesTab() {
           <Animated.View
             entering={FadeInDown.delay(100).springify()}
           >
-            <View className="flex-row bg-[#58E886]/10  items-center justify-center space-x-4 pt-1">
+            <View className="flex-row bg-[#58E886]/10  items-center justify-between px-4 py-2">
               <TouchableOpacity onPress={goToPrevMonth} className="p-2">
                 <Ionicons name="chevron-back" size={22} color="#58E886" />
               </TouchableOpacity>
               <Text className="text-[#58E886] text-lg font-bold">
                 {getMonthName(selectedMonth)} {selectedYear}
               </Text>
-              <TouchableOpacity onPress={goToNextMonth} className="p-2">
-                <Ionicons name="chevron-forward" size={22} color="#58E886" />
-              </TouchableOpacity>
+              <View className="flex-row items-center space-x-2">
+               
+                <TouchableOpacity onPress={goToNextMonth} className="p-2">
+                  <Ionicons name="chevron-forward" size={22} color="#58E886" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {filteredExpenses.length > 0 && (

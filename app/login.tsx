@@ -198,27 +198,12 @@ export default function LoginScreen() {
             )}
           </View>
 
-          {/* Divider */}
-          <View className="flex-row items-center mb-8">
-            <View className="flex-1 h-px bg-[#4C566A]" />
-            <Text className="mx-4 text-[#D8DEE9]">or</Text>
-            <View className="flex-1 h-px bg-[#4C566A]" />
-          </View>
+        
 
-          {/* Google Sign In */}
-          <TouchableOpacity
-            className="bg-white py-4 rounded-lg mb-8 flex-row items-center justify-center"
-            onPress={handleGoogleAuth}
-            disabled={loading}
-          >
-            <Text className="text-xl mr-2">🔍</Text>
-            <Text className="text-[#001711] font-bold text-lg">
-              Continue with Google
-            </Text>
-          </TouchableOpacity>
+
 
           {/* Toggle Sign Up/Sign In */}
-          <View className="flex-row justify-center">
+          <View className="flex-row justify-center pt-5l.terr">
             <Text className="text-[#D8DEE9]">
               {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
             </Text>

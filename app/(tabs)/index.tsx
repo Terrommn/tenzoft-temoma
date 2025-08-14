@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Drawer, PieChart, Scaffold } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProfilePicture } from '../../hooks/useProfilePicture';
+import { budgetService } from '../../services/supabaseService';
 
 interface Expense {
   id: string;
@@ -34,11 +37,13 @@ export default function Index() {
   const [drawerVisible, setDrawerVisible] = useState(false);
 
   const { user } = useAuth();
+  const router = useRouter();
+  const { avatarImage, refreshProfilePicture } = useProfilePicture();
 
   // Budget state variables
-  const [dailyBudget] = useState(50);
-  const [weeklyBudget] = useState(300);
-  const [monthlyBudget] = useState(1200);
+  const [dailyBudget, setDailyBudget] = useState(50);
+  const [weeklyBudget, setWeeklyBudget] = useState(300);
+  const [monthlyBudget, setMonthlyBudget] = useState(1200);
 
   // Get current month/year for filtering
   const now = new Date();
@@ -69,6 +74,7 @@ export default function Index() {
   useEffect(() => {
     loadExpenses();
     loadCategories();
+    loadBudgets();
   }, []);
 
   // Reload data when screen comes into focus
@@ -76,6 +82,8 @@ export default function Index() {
     React.useCallback(() => {
       loadExpenses();
       loadCategories();
+      loadBudgets();
+      refreshProfilePicture(); // Refresh profile picture when returning to screen
     }, [])
   );
 
@@ -107,6 +115,27 @@ export default function Index() {
       }
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  const loadBudgets = async () => {
+    try {
+      if (!user) return;
+
+      const { data, error } = await budgetService.getBudget();
+
+      if (error && error.message !== 'No rows found') {
+        throw error;
+      }
+
+      if (data) {
+        setDailyBudget(data.daily_budget || 50);
+        setWeeklyBudget(data.weekly_budget || 300);
+        setMonthlyBudget(data.monthly_budget || 1200);
+      }
+    } catch (error) {
+      console.error('Error loading budgets:', error);
+      // Keep default values if loading fails
     }
   };
 
@@ -223,12 +252,16 @@ export default function Index() {
           
           {/* User Info */}
             <View className="flex-row items-center">
-              <View className="w-12 h-12 bg-[#58E886] rounded-full items-center justify-center mr-3">
-                <Ionicons name="person" size={24} color="#001711" />
+              <View className="w-12 h-12 bg-[#58E886]/20 border-2 border-[#58E886] rounded-full items-center justify-center mr-3 overflow-hidden">
+                <Image
+                  source={avatarImage}
+                  style={{ width: 40, height: 40 }}
+                  resizeMode="cover"
+                />
               </View>
               <View className="flex-1">
                 <Text className="text-[#58E886] font-semibold text-xl">
-                  {user?.displayName || 'User'}
+                  {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User'}
                 </Text>
                 <Text className="text-[#D8DEE9]/70 text-sm">
                   {user?.email || 'No email set'}
@@ -240,41 +273,65 @@ export default function Index() {
         {/* Drawer Content */}
         <View className="p-6 space-y-2">
           {/* Profile */}
-          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
-            <Ionicons name="person-circle" size={24} color="#58E886" />
-            <Text className="text-[#58E886] font-medium text-base pl-2 ">Profile</Text>
+          <TouchableOpacity 
+            className="flex-row items-center py-4 px-3 rounded-2xl"
+            onPress={() => {
+              setDrawerVisible(false);
+              router.push('/profile');
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="person-circle" size={18} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2">Profile</Text>
           </TouchableOpacity>
 
           {/* Categories */}
-          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
-            <Ionicons name="list" size={24} color="#58E886" />
-            <Text className="text-[#58E886] font-medium text-base pl-2 ">Categories</Text>
+          <TouchableOpacity 
+            className="flex-row items-center py-4 px-3 rounded-2xl"
+            onPress={() => {
+              setDrawerVisible(false);
+              router.push('/categories');
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="list" size={18} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2">Categories</Text>
           </TouchableOpacity>
 
-          {/* Settings */}
-          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
-            <Ionicons name="cash" size={24} color="#58E886" />
-            <Text className="text-[#58E886] font-medium text-base pl-2 ">Budgets</Text>
+          {/* Budgets */}
+          <TouchableOpacity 
+            className="flex-row items-center py-4 px-3 rounded-2xl"
+            onPress={() => {
+              setDrawerVisible(false);
+              router.push('/budget');
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="cash" size={18} color="#58E886" />
+            <Text className="text-[#58E886] font-medium text-base pl-2">Budgets</Text>
           </TouchableOpacity>
           
-          {/* Settings */}
-          <TouchableOpacity className="flex-row items-center py-4 px-3 rounded-2xl ">
-            <Ionicons name="settings" size={24} color="#58E886" />
-            <Text className="text-[#58E886] font-medium text-base pl-2 ">Settings</Text>
-          </TouchableOpacity>
-
       
         </View>
       </Drawer>
 
       <Scaffold>
         <View className="flex-row bg-[#58E886]/10 items-center justify-between px-4 py-4">
-          <Text className="text-[#58E886] text-lg font-bold">
-            {getTimeBasedGreeting()}, {user?.displayName}
-          </Text>
+          <View className="flex-row items-center flex-1">
+            <View className="w-10 h-10 bg-[#58E886]/20 border-2 border-[#58E886] rounded-full items-center justify-center mr-3 overflow-hidden">
+              <Image
+                source={avatarImage}
+                style={{ width: 32, height: 32 }}
+                resizeMode="cover"
+              />
+            </View>
+            <Text className="text-[#58E886] text-lg font-bold flex-1" numberOfLines={1}>
+              {getTimeBasedGreeting()}, {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User'}
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={() => setDrawerVisible(true)}
-            className="p-2"
+            className="p-2 ml-2"
             activeOpacity={0.8}
           >
             <Ionicons name="menu" size={24} color="#58E886" />

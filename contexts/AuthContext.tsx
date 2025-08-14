@@ -1,13 +1,9 @@
+import { User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import supabase from '../config/supabase';
+import { useSupabase } from './SupabaseContext';
 
-// Mock user type
-interface MockUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-}
-
-// Mock user profile type
+// User profile type
 interface UserProfile {
   id: string;
   email: string;
@@ -16,13 +12,13 @@ interface UserProfile {
 }
 
 interface AuthContextType {
-  user: MockUser | null;
+  user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  signUpWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string; user?: User }>;
+  signUpWithGoogle: () => Promise<{ success: boolean; error?: string; user?: User }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   updateProfile: (updates: { displayName?: string; photoURL?: string }) => Promise<{ success: boolean; error?: string }>;
   sendPasswordResetEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -44,32 +40,40 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<MockUser | null>(null);
+  const { user, loading: supabaseLoading, initialized } = useSupabase();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (initialized) {
+      setLoading(supabaseLoading);
+      
+      if (user) {
+        // Create or fetch user profile
+        setUserProfile({
+          id: user.id,
+          email: user.email || '',
+          displayName: user.user_metadata?.display_name || user.email?.split('@')[0] || 'User',
+          photoURL: user.user_metadata?.avatar_url
+        });
+      } else {
+        setUserProfile(null);
+      }
+    }
+  }, [user, supabaseLoading, initialized]);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Mock successful sign in
-      const mockUser: MockUser = {
-        uid: 'mock-user-id',
-        email: email,
-        displayName: 'Mock User'
-      };
-      setUser(mockUser);
-      setUserProfile({
-        id: mockUser.uid,
-        email: email,
-        displayName: 'Mock User'
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -81,19 +85,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (email: string, password: string, displayName?: string) => {
     setLoading(true);
     try {
-      // Mock successful sign up
-      const mockUser: MockUser = {
-        uid: 'mock-user-id',
-        email: email,
-        displayName: displayName || 'Mock User'
-      };
-      setUser(mockUser);
-      setUserProfile({
-        id: mockUser.uid,
-        email: email,
-        displayName: displayName || 'Mock User'
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName,
+          },
+        },
       });
-      return { success: true, user: mockUser };
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, user: data.user };
     } catch (error: any) {
       return { success: false, error: error.message };
     } finally {
@@ -104,19 +110,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      // Mock successful Google sign in
-      const mockUser: MockUser = {
-        uid: 'mock-google-user-id',
-        email: 'mock@gmail.com',
-        displayName: 'Mock Google User'
-      };
-      setUser(mockUser);
-      setUserProfile({
-        id: mockUser.uid,
-        email: 'mock@gmail.com',
-        displayName: 'Mock Google User'
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'your-app://auth/callback', // You'll need to configure this
+        },
       });
-      return { success: true, user: mockUser };
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, user: data };
     } catch (error: any) {
       return { success: false, error: error.message };
     } finally {
@@ -131,7 +136,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     setLoading(true);
     try {
-      setUser(null);
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
       setUserProfile(null);
       return { success: true };
     } catch (error: any) {
@@ -143,12 +153,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (updates: { displayName?: string; photoURL?: string }) => {
     try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          display_name: updates.displayName,
+          avatar_url: updates.photoURL,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
       if (userProfile) {
         setUserProfile({
           ...userProfile,
-          ...updates
+          displayName: updates.displayName || userProfile.displayName,
+          photoURL: updates.photoURL || userProfile.photoURL,
         });
       }
+
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -157,7 +180,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const sendPasswordResetEmail = async (email: string) => {
     try {
-      // Mock successful password reset
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'your-app://auth/reset-password', // You'll need to configure this
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -166,7 +196,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
     try {
-      // Mock successful password change
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };

@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { SupabaseProvider } from '../contexts/SupabaseContext';
 import '../global.css';
 import { tamaguiConfig } from '../tamagui.config';
 
@@ -46,6 +47,7 @@ function RootLayoutNav() {
         }} 
       />
       <Stack.Screen name="categories" options={{ headerShown: false }} />
+      <Stack.Screen name="budget" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -56,9 +58,11 @@ export default function RootLayout() {
       <TamaguiProvider config={tamaguiConfig}>
         <Theme name="dark">
           <PortalProvider>
-            <AuthProvider>
-              <RootLayoutNav />
-            </AuthProvider>
+            <SupabaseProvider>
+              <AuthProvider>
+                <RootLayoutNav />
+              </AuthProvider>
+            </SupabaseProvider>
           </PortalProvider>
         </Theme>
       </TamaguiProvider>
