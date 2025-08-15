@@ -210,63 +210,98 @@ export const subscriptions = {
 export const budgetService = {
   // Get budget for the current user
   async getBudget(): Promise<{ data: Budget | null; error: any }> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: { message: 'User not authenticated' } };
-    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No user found in getBudget');
+        return { data: null, error: { message: 'User not authenticated' } };
+      }
 
-    const { data, error } = await supabase
-      .from('budgets')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-    
-    return { data, error };
+      console.log('Fetching budget for user:', user.id);
+      
+      // First try to get the existing budget
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();  // Use maybeSingle instead of single to handle no rows gracefully
+      
+      if (error) {
+        console.error('Error in getBudget:', error);
+        return { data: null, error };
+      }
+
+      // If no budget exists, create default budget
+      if (!data) {
+        console.log('No budget found, creating default budget');
+        const defaultBudget = {
+          user_id: user.id,
+          daily_budget: 50,
+          weekly_budget: 300,
+          monthly_budget: 1200,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const { data: newBudget, error: insertError } = await supabase
+          .from('budgets')
+          .insert(defaultBudget)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating default budget:', insertError);
+          return { data: null, error: insertError };
+        }
+
+        console.log('Default budget created:', newBudget);
+        return { data: newBudget, error: null };
+      }
+
+      console.log('Budget data retrieved:', data);
+      return { data, error };
+    } catch (error) {
+      console.error('Unexpected error in getBudget:', error);
+      return { data: null, error };
+    }
   },
 
   // Create or update budget
   async upsertBudget(budget: Omit<Budget, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<{ data: Budget | null; error: any }> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: { message: 'User not authenticated' } };
-    }
-
-    // First check if budget exists
-    const { data: existingBudget } = await supabase
-      .from('budgets')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    const budgetData = {
-      ...budget,
-      user_id: user.id,
-      updated_at: new Date().toISOString(),
-    };
-
-    // If budget exists, update it, otherwise insert new one
-    if (existingBudget) {
-      const { data, error } = await supabase
-        .from('budgets')
-        .update(budgetData)
-        .eq('user_id', user.id)
-        .select()
-        .single();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
       
-      return { data, error };
-    } else {
+      if (!user) {
+        console.log('No user found in upsertBudget');
+        return { data: null, error: { message: 'User not authenticated' } };
+      }
+
+      console.log('Upserting budget for user:', user.id, 'Budget data:', budget);
+
+      // Directly use upsert with user_id as the unique key
       const { data, error } = await supabase
         .from('budgets')
-        .insert({
-          ...budgetData,
-          created_at: new Date().toISOString(),
+        .upsert({
+          user_id: user.id,
+          ...budget,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
         })
         .select()
         .single();
-      
+
+      if (error) {
+        console.error('Error in upsertBudget:', error);
+        return { data: null, error };
+      }
+
+      console.log('Budget upserted successfully:', data);
       return { data, error };
+    } catch (error) {
+      console.error('Unexpected error in upsertBudget:', error);
+      return { data: null, error };
     }
   },
 };

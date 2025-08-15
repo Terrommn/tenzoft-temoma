@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useRef, useState } from 'react';
 import {
     Keyboard,
@@ -25,6 +26,8 @@ import Animated, {
     ZoomIn
 } from 'react-native-reanimated';
 import { Scaffold } from '../../components/ui';
+import { useAuth } from '../../contexts/AuthContext';
+import { Expense, expenseService } from '../../services/supabaseService';
 
 interface Message {
   id: string;
@@ -46,6 +49,38 @@ export default function ChatTab() {
   const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const inputScale = useSharedValue(1);
+
+  const { user } = useAuth();
+  const [monthlyExpenses, setMonthlyExpenses] = useState<Expense[]>([]);
+  const [expensesLoading, setExpensesLoading] = useState(true);
+
+  const loadMonthlyExpenses = async () => {
+    if (!user) return;
+    setExpensesLoading(true);
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+    const { data, error } = await expenseService.getExpensesByDateRange(startOfMonth, endOfMonth);
+    if (error) {
+      console.error("Error loading monthly expenses:", error);
+      setMonthlyExpenses([]);
+    } else {
+      setMonthlyExpenses(data || []);
+    }
+    setExpensesLoading(false);
+  };
+
+  React.useEffect(() => {
+    loadMonthlyExpenses();
+  }, [user]);
+
+  // Reload expenses when the screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMonthlyExpenses();
+    }, [user]) // Depend on user to refetch if user changes
+  );
 
   const sendMessage = async () => {
     if (inputText.trim() === '') return;
@@ -70,10 +105,11 @@ export default function ChatTab() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
+    // Simulate AI response delay
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: getAIResponse(userMessage.text),
+        text: getAIResponse(userMessage.text, monthlyExpenses), // Pass monthlyExpenses here
         isUser: false,
         timestamp: new Date(),
       };
@@ -86,14 +122,58 @@ export default function ChatTab() {
     }, 1500);
   };
 
-  const getAIResponse = (userText: string): string => {
+  const getAIResponse = (userText: string, expenses: Expense[]): string => {
+    const lowerCaseText = userText.toLowerCase();
+
+    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    // Check for total spending questions
+    if (lowerCaseText.includes('cuánto gasté') || lowerCaseText.includes('total gastado') || lowerCaseText.includes('total de gastos')) {
+      return `Este mes has gastado un total de $${totalExpenses.toFixed(2)}.`;
+    }
+
+    // Check for category spending questions
+    if (lowerCaseText.includes('en qué gasté más') || lowerCaseText.includes('gastos por categoría') || lowerCaseText.includes('categorías de gasto')) {
+      if (expenses.length === 0) {
+        return "Aún no tienes gastos registrados este mes para analizar por categoría.";
+      }
+      const categoryTotals: { [key: string]: number } = {};
+      expenses.forEach(exp => {
+        categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+      });
+
+      const sortedCategories = Object.entries(categoryTotals).sort(([, amountA], [, amountB]) => amountB - amountA);
+
+      if (sortedCategories.length === 0) {
+        return "No hay gastos categorizados este mes.";
+      }
+
+      const topCategory = sortedCategories[0];
+      return `Este mes, has gastado más en ${topCategory[0]} con $${topCategory[1].toFixed(2)}.`;
+    }
+
+    // Check for general expense questions
+    if (lowerCaseText.includes('mis gastos') || lowerCaseText.includes('mis transacciones')) {
+      if (expenses.length === 0) {
+        return "No tienes gastos registrados este mes.";
+      }
+      const latestExpenses = expenses
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 3);
+      
+      const expenseList = latestExpenses.map(exp => `- $${exp.amount.toFixed(2)} en ${exp.category}`).join('\n');
+      return `Aquí están algunos de tus gastos recientes de este mes:\n${expenseList}\nPara ver todos tus gastos, visita la pestaña de Gastos.`;
+    }
+
+    // Default responses if no specific question is matched
     const responses = [
-      "That's an interesting question! Let me think about that for you.",
-      "I understand what you're asking. Here's what I think...",
-      "Great question! As Temoma AI, I'm here to help you with anything you need.",
-      "I'm constantly learning and improving to better assist you.",
-      "Thanks for chatting with me! Is there anything specific you'd like to know?",
-      "I love talking with users like you. What else would you like to explore?",
+      "¡Eso es una pregunta interesante! Déjame pensar en ello.",
+      "Entiendo lo que preguntas. Aquí está lo que pienso...",
+      "¡Gran pregunta! Como Temoma AI, estoy aquí para ayudarte con lo que necesites.",
+      "Estoy aprendiendo y mejorando constantemente para ayudarte mejor.",
+      "Gracias por chatear conmigo. ¿Hay algo más específico que te gustaría saber?",
+      "Me encanta hablar con usuarios como tú. ¿Qué más te gustaría explorar?",
+      "No estoy seguro de cómo responder a eso con los datos de tus gastos. Intenta preguntarme algo como 'cuánto gasté' o 'en qué categoría gasté más'."
     ];
     return responses[Math.floor(Math.random() * responses.length)];
   };

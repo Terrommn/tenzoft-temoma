@@ -3,18 +3,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Animated, {
-    FadeInDown,
-    FadeInUp,
-    ZoomIn
+  FadeInDown,
+  FadeInUp,
+  ZoomIn
 } from 'react-native-reanimated';
 import { Scaffold } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -268,16 +268,7 @@ export default function ProfileScreen() {
                 </Text>
               </View>
 
-              <TouchableOpacity
-                onPress={() => router.push('/budget')}
-                className="flex-row items-center justify-between py-3 border-t border-[#58E886]/20"
-              >
-                <View className="flex-row items-center">
-                  <Ionicons name="wallet" size={20} color="#58E886" />
-                  <Text className="text-[#58E886] font-semibold ml-3">Budget Settings</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#58E886" />
-              </TouchableOpacity>
+            
             </View>
           </Animated.View>
 
