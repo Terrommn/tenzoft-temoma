@@ -15,9 +15,11 @@ import Animated, {
     BounceIn,
     FadeIn,
     FadeInUp,
+    FadeOutUp,
     Layout,
     SlideInLeft,
     SlideInRight,
+    SlideInUp,
     useSharedValue,
     withDelay,
     withRepeat,
@@ -27,6 +29,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Scaffold } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
+import { getGeminiResponse } from '../../services/geminiService';
 import { Expense, expenseService } from '../../services/supabaseService';
 
 interface Message {
@@ -37,6 +40,7 @@ interface Message {
 }
 
 export default function ChatTab() {
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -105,78 +109,43 @@ export default function ChatTab() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Simulate AI response delay
-    setTimeout(() => {
+    try {
+      // Get AI response from Gemini
+      const aiResponseText = await getGeminiResponse(userMessage.text);
+      // Begin typing indicator exit before showing AI message for smoother flow
+      setIsTyping(false);
+      await sleep(180);
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: getAIResponse(userMessage.text, monthlyExpenses), // Pass monthlyExpenses here
+        text: aiResponseText,
         isUser: false,
         timestamp: new Date(),
       };
+
       setMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
-      
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
-    }, 1500);
+    } catch (error) {
+      console.error('Error:', error);
+      // Hide typing indicator first even on error
+      setIsTyping(false);
+      await sleep(180);
+
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Lo siento, tuve un problema al procesar tu pregunta. ¿Podrías intentarlo de nuevo?",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      // no-op; typing indicator handled above to control timing
+    }
   };
 
-  const getAIResponse = (userText: string, expenses: Expense[]): string => {
-    const lowerCaseText = userText.toLowerCase();
 
-    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
-    // Check for total spending questions
-    if (lowerCaseText.includes('cuánto gasté') || lowerCaseText.includes('total gastado') || lowerCaseText.includes('total de gastos')) {
-      return `Este mes has gastado un total de $${totalExpenses.toFixed(2)}.`;
-    }
-
-    // Check for category spending questions
-    if (lowerCaseText.includes('en qué gasté más') || lowerCaseText.includes('gastos por categoría') || lowerCaseText.includes('categorías de gasto')) {
-      if (expenses.length === 0) {
-        return "Aún no tienes gastos registrados este mes para analizar por categoría.";
-      }
-      const categoryTotals: { [key: string]: number } = {};
-      expenses.forEach(exp => {
-        categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
-      });
-
-      const sortedCategories = Object.entries(categoryTotals).sort(([, amountA], [, amountB]) => amountB - amountA);
-
-      if (sortedCategories.length === 0) {
-        return "No hay gastos categorizados este mes.";
-      }
-
-      const topCategory = sortedCategories[0];
-      return `Este mes, has gastado más en ${topCategory[0]} con $${topCategory[1].toFixed(2)}.`;
-    }
-
-    // Check for general expense questions
-    if (lowerCaseText.includes('mis gastos') || lowerCaseText.includes('mis transacciones')) {
-      if (expenses.length === 0) {
-        return "No tienes gastos registrados este mes.";
-      }
-      const latestExpenses = expenses
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 3);
-      
-      const expenseList = latestExpenses.map(exp => `- $${exp.amount.toFixed(2)} en ${exp.category}`).join('\n');
-      return `Aquí están algunos de tus gastos recientes de este mes:\n${expenseList}\nPara ver todos tus gastos, visita la pestaña de Gastos.`;
-    }
-
-    // Default responses if no specific question is matched
-    const responses = [
-      "¡Eso es una pregunta interesante! Déjame pensar en ello.",
-      "Entiendo lo que preguntas. Aquí está lo que pienso...",
-      "¡Gran pregunta! Como Temoma AI, estoy aquí para ayudarte con lo que necesites.",
-      "Estoy aprendiendo y mejorando constantemente para ayudarte mejor.",
-      "Gracias por chatear conmigo. ¿Hay algo más específico que te gustaría saber?",
-      "Me encanta hablar con usuarios como tú. ¿Qué más te gustaría explorar?",
-      "No estoy seguro de cómo responder a eso con los datos de tus gastos. Intenta preguntarme algo como 'cuánto gasté' o 'en qué categoría gasté más'."
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
 
   const renderMessage = (message: Message, index: number) => {
     const isUser = message.isUser;
@@ -188,7 +157,7 @@ export default function ChatTab() {
         entering={
           isUser 
             ? SlideInRight.delay(animationDelay).springify().damping(15).stiffness(100)
-            : SlideInLeft.delay(animationDelay).springify().damping(15).stiffness(100)
+            : SlideInUp.delay(animationDelay).duration(250)
         }
         layout={Layout.springify().damping(15).stiffness(100)}
         className={`mb-6 ${isUser ? 'items-end' : 'items-start'}`}
@@ -198,7 +167,7 @@ export default function ChatTab() {
           entering={
             isUser 
               ? ZoomIn.delay(animationDelay + 200).springify()
-              : BounceIn.delay(animationDelay + 200).springify()
+              : FadeInUp.delay(animationDelay + 200).duration(220)
           }
           className={`max-w-[85%] p-4 rounded-2xl shadow-lg ${
             isUser
@@ -247,7 +216,7 @@ export default function ChatTab() {
   const TypingIndicator = () => (
     <Animated.View
       entering={SlideInLeft.springify().damping(15)}
-      exiting={FadeInUp.springify()}
+      exiting={FadeOutUp.duration(180)}
       className="items-start mb-6"
     >
       {/* Typing Bubble */}

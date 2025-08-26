@@ -16,6 +16,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "tenzorial.industries@gmail.com",
+        "ascAppId": "6751319666",
+        "appleTeamId": "MSWYYJQKJX"
+      }
+    }
   }
 }

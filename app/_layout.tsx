@@ -17,9 +17,10 @@ function RootLayoutNav() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === 'login';
+    const inPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms';
 
-    if (!user && !inAuthGroup) {
-      // User is not authenticated and not on login page, redirect to login
+    if (!user && !inAuthGroup && !inPublicRoute) {
+      // User is not authenticated and not on login/public pages, redirect to login
       router.replace('/login');
     } else if (user && inAuthGroup) {
       // User is authenticated but on login page, redirect to tabs
@@ -48,6 +49,8 @@ function RootLayoutNav() {
       />
       <Stack.Screen name="categories" options={{ headerShown: false }} />
       <Stack.Screen name="budget" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy" options={{ headerShown: false }} />
+      <Stack.Screen name="terms" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -7,13 +7,20 @@
     "scheme": "temoma",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#001711"
+    },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.terrommn.temoma",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "privacy": "https://www.freeprivacypolicy.com/live/f1c25f6c-b0ce-4d44-8705-bced38478846",
     "android": {
       "edgeToEdgeEnabled": true,
       "package": "com.terromn.temoma"

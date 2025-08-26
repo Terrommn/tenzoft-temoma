@@ -10,7 +10,7 @@ module.exports = {
         // Dark Green Theme Palette
         'dark-primary': '#001711',     // Primary dark background
         'dark-secondary': '#003030',   // Secondary dark elements
-        'accent-green': '#58E886',     // Bright accent color
+      'accent-green': '#58E886',     // Bright accent color
         'text-light': '#D8DEE9',       // Light text on dark backgrounds
         'text-contrast': '#ECEFF4',    // High contrast text
         

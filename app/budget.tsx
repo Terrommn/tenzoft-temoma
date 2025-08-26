@@ -7,6 +7,91 @@ import { Scaffold } from '../components/ui/Scaffold';
 import { useAuth } from '../contexts/AuthContext';
 import { budgetService } from '../services/supabaseService';
 
+// Memoized input component hoisted to module scope to preserve focus across parent re-renders
+const BudgetInput = React.memo(({ label, value, onChangeText, placeholder, icon }: {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  icon: string;
+}) => {
+  const inputRef = React.useRef<TextInput>(null);
+
+  return (
+    <View className="mb-6">
+      <Text className="text-[#58E886] mb-3 text-base font-semibold">{label}</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#58E8861A',
+          borderWidth: 2,
+          borderColor: '#58E8864D',
+          borderRadius: 16,
+          paddingHorizontal: 16,
+          height: 40, // Adjusted height for icon and input
+        }}>
+        <View style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name={icon as any} size={20} color="#58E886" />
+        </View>
+        <Text style={{ color: '#58E886', fontSize: 18, fontWeight: 'bold', width: 16, textAlign: 'center' }}>$
+        </Text>
+        <View style={{ flex: 1, marginLeft: 8, position: 'relative', justifyContent: 'center' }}>
+          {(!value || value.length === 0) && (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center',
+              }}>
+              <Text style={{ color: '#58E886aa', fontSize: 18, fontWeight: '600', lineHeight: 28 }}>
+                {placeholder}
+              </Text>
+            </View>
+          )}
+          <TextInput
+            ref={inputRef}
+            
+            style={{
+              color: '#58E886',
+              fontSize: 18,
+              fontWeight: '600',
+              height: 40, // Match parent row
+              paddingVertical: 0,
+              paddingHorizontal: 0,
+              margin: 0,
+              textAlignVertical: 'center',
+              textAlign: 'left',
+            }}
+
+            value={value}
+            onChangeText={(text) => {
+              // Only allow numbers and decimal point
+              const numericText = text.replace(/[^0-9.]/g, '');
+              
+              // Ensure only one decimal point
+              const parts = numericText.split('.');
+              const filteredText = parts.length > 2 
+                ? parts[0] + '.' + parts.slice(1).join('')
+                : numericText;
+              
+              onChangeText(filteredText);
+            }}
+            keyboardType="decimal-pad"
+            placeholder=""
+            underlineColorAndroid="transparent"
+          />
+        </View>
+      </View>
+    </View>
+
+  );
+});
+
 export default function BudgetScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -79,79 +164,6 @@ export default function BudgetScreen() {
     }
   };
 
-  // Memoize BudgetInput to prevent unnecessary re-renders
-  const BudgetInput = React.memo(({ label, value, onChangeText, placeholder, icon }: {
-    label: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    placeholder: string;
-    icon: string;
-  }) => {
-    const inputRef = React.useRef<TextInput>(null);
-
-    return (
-      <View className="mb-6">
-        <Text className="text-[#58E886] mb-3 text-base font-semibold">{label}</Text>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#58E8861A',
-            borderWidth: 2,
-            borderColor: '#58E8864D',
-            borderRadius: 16,
-            paddingHorizontal: 16,
-            height: 40, // Adjusted height for icon and input
-          }}>
-          <View style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name={icon as any} size={20} color="#58E886" />
-          </View>
-          <Text style={{ color: '#58E886', fontSize: 18, fontWeight: 'bold', width: 16, textAlign: 'center' }}>$
-          </Text>
-          <View style={{ flex: 1, marginLeft: 8, position: 'relative', justifyContent: 'center' }}>
-            {(!value || value.length === 0) && (
-              <View
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  justifyContent: 'center',
-                }}>
-                <Text style={{ color: '#58E886aa', fontSize: 18, fontWeight: '600', lineHeight: 28 }}>
-                  {placeholder}
-                </Text>
-              </View>
-            )}
-            <TextInput
-              ref={inputRef}
-              style={{
-                color: '#58E886',
-                fontSize: 18,
-                fontWeight: '600',
-                height: 40, // Match parent row
-                paddingVertical: 0,
-                paddingHorizontal: 0,
-                margin: 0,
-                textAlignVertical: 'center',
-                textAlign: 'left',
-              }}
-
-              value={value}
-              onChangeText={onChangeText}
-              keyboardType="decimal-pad"
-              placeholder=""
-              underlineColorAndroid="transparent"
-            />
-          </View>
-        </View>
-      </View>
-
-    );
-  });
-
   if (initialLoading) {
     return (
       <Scaffold
@@ -198,6 +210,7 @@ export default function BudgetScreen() {
           >
             <BudgetInput
               label="Daily Budget"
+              
               value={dailyBudget}
               onChangeText={handleDailyBudgetChange}
               placeholder="0.00"

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -12,6 +13,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const { signIn, signUp, signInWithGoogle, sendPasswordResetEmail } = useAuth();
 
@@ -136,8 +139,8 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 justify-center px-8">
           <View className="items-center mb-12">
-            <Text className="text-4xl font-bold text-[#58E886] mb-2">
-              💰 Welcome to Temoma
+            <Text className="text-4xl  text-center font-bold text-[#58E886] mb-2">
+             Welcome to Temoma
             </Text>
             <Text className="text-lg text-[#D8DEE9] text-center">
               {isSignUp ? 'Create your account' : 'Sign in to your account'}
@@ -176,12 +179,61 @@ export default function LoginScreen() {
               secureTextEntry
             />
 
+            {/* Privacy and Terms Checkboxes for Sign Up */}
+            {isSignUp && (
+              <View className="mb-6 space-y-4">
+                {/* Privacy Policy Checkbox */}
+                <TouchableOpacity
+                  className="flex-row items-center"
+                  onPress={() => setAcceptedPrivacy(!acceptedPrivacy)}
+                >
+                  <View className={`w-5 h-5 rounded-full border-2 border-[#58E886] mr-3 items-center justify-center ${acceptedPrivacy ? 'bg-[#58E886]' : 'bg-transparent'}`}>
+                    {acceptedPrivacy && (
+                      <Ionicons name="checkmark" size={12} color="#001711" />
+                    )}
+                  </View>
+                  <View className="flex-1 flex-row flex-wrap">
+                    <Text className="text-[#D8DEE9]">I accept the </Text>
+                    <TouchableOpacity onPress={() => router.push('/privacy' as any)}>
+                      <Text className="text-[#58E886] underline">Privacy Policy</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Terms of Service Checkbox */}
+                <TouchableOpacity
+                  className="flex-row items-center"
+                  onPress={() => setAcceptedTerms(!acceptedTerms)}
+                >
+                  <View className={`w-5 h-5 rounded-full border-2 border-[#58E886] mr-3 items-center justify-center ${acceptedTerms ? 'bg-[#58E886]' : 'bg-transparent'}`}>
+                    {acceptedTerms && (
+                      <Ionicons name="checkmark" size={12} color="#001711" />
+                    )}
+                  </View>
+                  <View className="flex-1 flex-row flex-wrap">
+                    <Text className="text-[#D8DEE9]">I accept the </Text>
+                    <TouchableOpacity onPress={() => router.push('/terms' as any)}>
+                      <Text className="text-[#58E886] underline">Terms of Service</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <TouchableOpacity
-              className="bg-[#58E886] py-4 rounded-lg mb-4"
+              className={`py-4 rounded-lg mb-4 ${
+                loading || (isSignUp && (!acceptedPrivacy || !acceptedTerms))
+                  ? 'bg-gray-500/50' 
+                  : 'bg-[#58E886]'
+              }`}
               onPress={handleEmailAuth}
-              disabled={loading}
+              disabled={loading || (isSignUp && (!acceptedPrivacy || !acceptedTerms))}
             >
-              <Text className="text-[#001711] text-center font-bold text-lg">
+              <Text className={`text-center font-bold text-lg ${
+                loading || (isSignUp && (!acceptedPrivacy || !acceptedTerms))
+                  ? 'text-gray-400'
+                  : 'text-[#001711]'
+              }`}>
                 {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
               </Text>
             </TouchableOpacity>

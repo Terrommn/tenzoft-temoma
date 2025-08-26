@@ -24,9 +24,10 @@ const PROFILE_STORAGE_KEY = '@temoma_profile';
 
 // Available profile pictures
 const profilePictures = [
-  { id: 'bear', name: 'Bear', image: require('../assets/profile_pictures/bear.png') },
-  { id: 'bird', name: 'Bird', image: require('../assets/profile_pictures/bird.png') },
-  { id: 'deer', name: 'Deer', image: require('../assets/profile_pictures/deer.png') },
+  { id: 'bear', name: 'Terrommn', image: require('../assets/profile_pictures/bear.png') },
+  { id: 'deer', name: 'Marushka', image: require('../assets/profile_pictures/deer.png') },
+  { id: 'bird', name: 'Tenzin', image: require('../assets/profile_pictures/bird.png') },
+
 ];
 
 interface ProfileData {
@@ -37,7 +38,7 @@ interface ProfileData {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, deleteAccount } = useAuth();
   const { refreshProfilePicture } = useProfilePicture();
   const [profileData, setProfileData] = useState<ProfileData>({
     selectedAvatar: 'bear',
@@ -324,6 +325,75 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          </Animated.View>
+
+          {/* Privacy & Account Section */}
+          <Animated.View
+            entering={FadeInUp.delay(600).springify()}
+            className="mt-8 space-y-4"
+          >
+            <Text className="text-[#58E886] text-xl font-bold mb-4">
+              Privacy & Account
+            </Text>
+
+            {/* Privacy Policy */}
+            <TouchableOpacity
+              onPress={() => router.push('/privacy' as any)}
+              className="bg-[#58E8861A] border border-[#58E8864D] rounded-2xl p-4 flex-row items-center justify-between"
+            >
+              <View className="flex-row items-center flex-1">
+                <Ionicons name="shield-checkmark" size={24} color="#58E886" />
+                <View className="ml-3 flex-1">
+                  <Text className="text-[#58E886] text-lg font-semibold">
+                    Privacy Policy
+                  </Text>
+                  <Text className="text-[#58E886]/60 text-sm">
+                    How we protect your data
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#58E886" />
+            </TouchableOpacity>
+
+
+            {/* Delete Account */}
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  'Delete Account',
+                  'This will permanently delete your account and all data. This action cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                      text: 'Delete Account', 
+                      style: 'destructive',
+                      onPress: async () => {
+                        const result = await deleteAccount();
+                        if (result.success) {
+                          router.replace('/login');
+                        } else {
+                          Alert.alert('Error', result.error || 'Failed to delete account');
+                        }
+                      }
+                    }
+                  ]
+                );
+              }}
+              className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 flex-row items-center justify-between"
+            >
+              <View className="flex-row items-center flex-1">
+                <Ionicons name="trash" size={24} color="#ef4444" />
+                <View className="ml-3 flex-1">
+                  <Text className="text-red-400 text-lg font-semibold">
+                    Delete Account
+                  </Text>
+                  <Text className="text-red-400/60 text-sm">
+                    Permanently remove all data
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#ef4444" />
+            </TouchableOpacity>
           </Animated.View>
         </Animated.View>
       </ScrollView>
